@@ -1,6 +1,6 @@
 ---
 title: "Spatial Data Analysis with INLA"
-authors: ["Virgilio Gómez Rubio"]
+author: "Virgilio Gómez Rubio"
 date: 2019-11-05
 categories: ["R"]
 tags: ["R", "INLA", "spatial"]
@@ -14,7 +14,8 @@ can be used to estimate the posterior marginal distribution of Bayesian
 hierarchical models. This method is implemented in the `INLA` package available
 for the `R` programming language. Given that the types of models that INLA can
 fit are quite wide, we will focus on spatial models for the analysis of lattice
-data. Hence, 
+data. A summary of INLA and its associated `R` packages is available in
+Gómez-Rubio (2020) that can be consulted on-line (see references below).
 
 
 ## Bayesian inference
@@ -143,9 +144,13 @@ package. The dataset records a number of cases of leukemia in upstate New York
 at the census tract level. Some of the variables in the dataset are:
 
 * `Cases`: Number of leukemia cases in the period 1978-1982.
+
 * `POP8`: Population in 1980.
+
 * `PCTOWNHOME`:  Proportion of people who own their home.
+
 * `PCTAGE65P`:  Proportion of people aged 65 or more.
+
 * `AVGIDIST`: Average inverse distance to the nearest Trichloroethene (TCE) site.
 
 Note that the interest is on the exposure to TCE, using `AVGIDIST` as a proxy
@@ -195,7 +200,7 @@ syracuse <- which(NY8$AREANAME == "Syracuse city")
 A disease map can be simply created with function `spplot` (in package
 `sp`):
 
-```{r fig = TRUE}
+```{r fig = TRUE, echo = FALSE}
 library(viridis)
 spplot(NY8[syracuse, ], "SMR", #at = c(0.6, 0.9801, 1.055, 1.087, 1.125, 13),
    col.regions = rev(magma(16))) #gray.colors(16, 0.9, 0.4))
@@ -203,7 +208,7 @@ spplot(NY8[syracuse, ], "SMR", #at = c(0.6, 0.9801, 1.055, 1.087, 1.125, 13),
 
 Interactive maps can be easily created with the `tmap` package:
 
-```{r eval = TRUE, message = FALSE, warning = FALSE}
+```{r eval = TRUE, echo = FALSE, message = FALSE, warning = FALSE}
 library(tmap)
 tmap_mode("view")
 
@@ -211,7 +216,7 @@ SMR_map <- tm_shape(NY8[syracuse, ]) +
   tm_fill(col = "SMR", alpha = 0.35) +
   tm_borders() +
   tm_shape(TCE) + tm_dots(col = "red") # Add TCE sites
-widgetframe::frameWidget(print(SMR_map))
+SMR_map
 ```
 
 Note that the previous map also includes the locations of the 11
@@ -258,7 +263,7 @@ Other arguments are set to compute the marginals of the model parameters
 
 Next, the summary of the model can be obtained:
 
-```{r}
+```{r echo = FALSE}
 summary(m1)
 ```
 
@@ -300,7 +305,7 @@ m2 <- inla(Cases ~ 1 + AVGIDIST + f(ID, model = "iid"),
 
 Now the summary of the mode includes information about the random effects:
 
-```{r}
+```{r echo = FALSE}
 summary(m2)
 ```
 
@@ -315,7 +320,7 @@ NY8$FIXED.EFF <- m1$summary.fitted[, "mean"]
 NY8$IID.EFF <- m2$summary.fitted[, "mean"]
 ```
 
-```{r, fig = TRUE, fig.width = 8, fig.height = 4}
+```{r echo = TRUE, fig = TRUE, fig.width = 8, fig.height = 4}
 spplot(NY8[syracuse, ], c("SMR", "FIXED.EFF", "IID.EFF"),
   col.regions = rev(magma(16)))
 ```
@@ -374,6 +379,7 @@ covariates we may want to account for the spatial structure of the data.
 Different types of regression models can be used to model lattice data:
 
 + Generalized Linear Models (with spatial random effects).
+
 + Spatial econometrics models.
 
 ### Linear Mixed Models
@@ -466,7 +472,7 @@ m.icar <- inla(Cases ~ 1 +  AVGIDIST +
 ```
 
 
-```{r}
+```{r echo = FALSE}
 summary(m.icar)
 ```
 
@@ -482,6 +488,7 @@ $$
 $$
 
 * $u_i$ is an i.i.d. Gaussian random effect
+
 * $v_i$ is an intrinsic CAR random effect
 
 
@@ -499,7 +506,7 @@ m.bym = inla(Cases ~ 1 +  AVGIDIST +
 ```
 
 
-```{r}
+```{r echo = FALSE}
 summary(m.bym)
 ```
 
@@ -565,7 +572,7 @@ m.ler = inla(Cases ~ 1 +  AVGIDIST +
   control.compute = list(dic = TRUE, waic = TRUE))
 ```
 
-```{r}
+```{r, echo = FALSE}
 summary(m.ler)
 ```
 
@@ -619,8 +626,11 @@ $$
 The elements of this model are:
 
 * $W$ is a row-standardized adjacency matrix.
+
 * $\rho$ is a spatial autocorrelation parameter.
+
 * $X$ is a matrix of covariates, with coefficients $\beta$.
+
 * $e$ are Gaussian i.i.d. errors with variance $\sigma^2$.
 
 
@@ -648,8 +658,11 @@ $$
 In order to define a model, we need:
 
 * `X`: Matrix of covariates
-* `W`: **Row-standardized** adjacency matrix
+
+* `W` **Row-standardized** adjacency matrix
+
 * `Q`: Precision matrix of coefficients  $\beta$
+
 * Range of $\rho$, often defined by the eigenvalues
 
 
@@ -718,7 +731,7 @@ m.slm <- inla( Cases ~ -1 +
 ```
 
 
-```{r}
+```{r echo = FALSE}
 summary(m.slm)
 ```
 
@@ -743,7 +756,7 @@ inla.zmarginal(marg.rho, FALSE)
 
 ```
 
-```{r fig = TRUE}
+```{r fig = TRUE, echo = FALSE}
 plot(marg.rho, type = "l", main = "Spatial autocorrelation")
 
 ```
@@ -760,7 +773,7 @@ NY8$SLM <- m.slm$summary.fitted.values[, "mean"]
 ```
 
 
-```{r fig = TRUE}
+```{r fig = TRUE, echo = TRUE}
 spplot(NY8[syracuse, ], 
   c("FIXED.EFF", "IID.EFF", "ICAR", "BYM", "LEROUX", "SLM"),
   col.regions = rev(magma(16))
@@ -772,7 +785,7 @@ Note how spatial models produce smoother estimates of the relative risk.
 In order to choose the best model, the model selection criteria computed
 above can be used:
 
-```{r, echo=FALSE}
+```{r echo = FALSE}
 
 results <- lapply(list(m1, m2, m.icar, m.bym, m.ler, m.slm), function(X) {
 
@@ -787,4 +800,21 @@ rownames(tab.res) <- c("FIXED", "IID", "ICAR", "BYM", "LEROUX", "SLM")
 knitr::kable(tab.res)
 
 ```
+
+
+## References
+
+Bivand, R., E. Pebesma and V. Gómez-Rubio (2013). *Applied spatial data
+analysis with R*. Springer-Verlag. New York.
+
+Gómez-Rubio, V. (2020). Bayesian inference with INLA. CRC Press. Boca Raton,
+FL. [https://becarioprecario.bitbucket.io/inla-gitbook](https://becarioprecario.bitbucket.io/inla-gitbook)
+
+Rue, H., S. Martino and N. Chopin (2009). *Approximate bayesian inference for
+latent Gaussian models by using integrated nested Laplace approximations*.
+Journal of the royal statistical society: Series B (statistical methodology)
+71(2): 319–392.
+
+Waller, L. A. and C. A. Gotway (2004). Applied spatial statistics for public
+health data. John Wiley & Sons, Inc. Hoboken, New Jersey.
 
